@@ -1,0 +1,104 @@
+{
+	"name": "df_LearnBasicTransformations",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "orders",
+						"type": "DatasetReference"
+					},
+					"name": "OrderStream"
+				},
+				{
+					"dataset": {
+						"referenceName": "product",
+						"type": "DatasetReference"
+					},
+					"name": "ProductMaster"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "SampleOutput",
+						"type": "DatasetReference"
+					},
+					"name": "CategorySummarySink"
+				}
+			],
+			"transformations": [
+				{
+					"name": "FilterActiveOrders"
+				},
+				{
+					"name": "LookupProductDetails"
+				},
+				{
+					"name": "CalculateExtendedPrice"
+				},
+				{
+					"name": "AggregateByCategory"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          OrderID as string,",
+				"          ProductID as string,",
+				"          Quantity as string,",
+				"          OrderStatus as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false,",
+				"     inline: true,",
+				"     type: 'Microsoft.DataFactory/dataOutputs') ~> OrderStream",
+				"source(output(",
+				"          RefProductID as string,",
+				"          ProductName as string,",
+				"          ProductCategory as string,",
+				"          UnitPrice as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false,",
+				"     inline: true,",
+				"     type: 'Microsoft.DataFactory/dataOutputs') ~> ProductMaster",
+				"OrderStream filter(OrderStatus == 'Completed') ~> FilterActiveOrders",
+				"FilterActiveOrders, ProductMaster lookup(ProductID == RefProductID,",
+				"     multiple: false,",
+				"     pickup: 'any',",
+				"     broadcast: 'auto')~> LookupProductDetails",
+				"LookupProductDetails derive(ExtendedPrice = toString(toInteger(UnitPrice) * toInteger(Quantity)),",
+				"          PipelineRunTime = currentTimestamp()) ~> CalculateExtendedPrice",
+				"CalculateExtendedPrice aggregate(groupBy(ProductCategory),",
+				"     TotalRevenue = sum(toInteger(ExtendedPrice)),",
+				"          TotalUnitsSold = sum(toInteger(Quantity))) ~> AggregateByCategory",
+				"AggregateByCategory sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          customer_id as string,",
+				"          first_name as string,",
+				"          last_name as string,",
+				"          email_domain as string,",
+				"          registration_date as string,",
+				"          loyalty_segment as string,",
+				"          geo_id as string,",
+				"          order_id as string,",
+				"          customer_id1 as string,",
+				"          order_date as string,",
+				"          shipping_method as string,",
+				"          payment_status as string",
+				"     ),",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     inline: true,",
+				"     type: 'Microsoft.DataFactory/dataOutputs') ~> CategorySummarySink"
+			]
+		}
+	}
+}

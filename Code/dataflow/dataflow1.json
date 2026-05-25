@@ -1,0 +1,107 @@
+{
+	"name": "dataflow1",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "DelimitedText1",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				},
+				{
+					"dataset": {
+						"referenceName": "DelimitedText2",
+						"type": "DatasetReference"
+					},
+					"name": "source2"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "Join",
+						"type": "DatasetReference"
+					},
+					"name": "sink1",
+					"rejectedDataLinkedService": {
+						"referenceName": "AzureDataLakeStorage1",
+						"type": "LinkedServiceReference"
+					}
+				}
+			],
+			"transformations": [
+				{
+					"name": "join1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          customer_id as string,",
+				"          first_name as string,",
+				"          last_name as string,",
+				"          email_domain as string,",
+				"          registration_date as string,",
+				"          loyalty_segment as string,",
+				"          geo_id as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> source1",
+				"source(output(",
+				"          order_id as string,",
+				"          customer_id as string,",
+				"          order_date as string,",
+				"          shipping_method as string,",
+				"          payment_status as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> source2",
+				"source1, source2 join(source1@customer_id == source2@customer_id,",
+				"     joinType:'outer',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> join1",
+				"join1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          customer_id as string,",
+				"          first_name as string,",
+				"          last_name as string,",
+				"          email_domain as string,",
+				"          registration_date as string,",
+				"          loyalty_segment as string,",
+				"          geo_id as string,",
+				"          order_id as string,",
+				"          customer_id1 as string,",
+				"          order_date as string,",
+				"          shipping_method as string,",
+				"          payment_status as string",
+				"     ),",
+				"     truncate: true,",
+				"     umask: 0577,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     mapColumn(",
+				"          customer_id = source1@customer_id,",
+				"          first_name,",
+				"          last_name,",
+				"          email_domain,",
+				"          registration_date,",
+				"          loyalty_segment,",
+				"          geo_id,",
+				"          order_id,",
+				"          customer_id1 = source2@customer_id,",
+				"          order_date,",
+				"          shipping_method,",
+				"          payment_status",
+				"     )) ~> sink1"
+			]
+		}
+	}
+}

@@ -1,0 +1,15 @@
+{
+	"name": "33333",
+	"properties": {
+		"trustModeClaimForMi": {
+			"value": "Enabled",
+			"editable": true
+		}
+	},
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "acaa50ff-ac13-4d9d-b13a-1099defbf094",
+		"tenantId": "f637fe71-2317-4564-b939-f29bebb0c409"
+	}
+}
